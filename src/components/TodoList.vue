@@ -27,7 +27,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const levels = [
+interface Task {
+  id: string;
+  name: string;
+  level: string;
+  completed: boolean;
+}
+
+const levels: string[] = [
   "Beginner Level",
   "Advance Beginner Level",
   "Mid Level",
@@ -35,17 +42,17 @@ const levels = [
   "Senior Level",
 ];
 
-const selectedLevel = ref("");
-const taskName = ref("");
-const completed = ref(false); // Track the completion status
-const todos = ref([]);
-const editingTaskId = ref(null); // Track the ID of the task being edited
+const selectedLevel = ref<string>("");
+const taskName = ref<string>("");
+const completed = ref<boolean>(false);
+const todos = ref<Task[]>([]); 
+const editingTaskId = ref<string | null>(null);
 
-function generateId() {
+function generateId(): string {
   return Date.now().toString() + Math.random().toString(16).substr(2);
 }
 
-function addOrUpdateTask() {
+function addOrUpdateTask(): void {
   if (editingTaskId.value) {
     const taskIndex = todos.value.findIndex(
       (task) => task.id === editingTaskId.value
@@ -53,41 +60,40 @@ function addOrUpdateTask() {
     if (taskIndex !== -1) {
       todos.value[taskIndex].name = taskName.value;
       todos.value[taskIndex].level = selectedLevel.value;
-      todos.value[taskIndex].completed = completed.value; // Update completion status
+      todos.value[taskIndex].completed = completed.value; 
     }
-    editingTaskId.value = null; // Reset editing state
+    editingTaskId.value = null; 
   } else {
-    const task = {
+    const task: Task = {
       id: generateId(),
       name: taskName.value,
       level: selectedLevel.value,
-      completed: completed.value, // Set completion status
+      completed: completed.value, 
     };
     todos.value.push(task);
   }
   localStorage.setItem("todos", JSON.stringify(todos.value));
-  taskName.value = ""; // Reset task name after adding or updating
-  selectedLevel.value = ""; // Reset selected level after adding or updating
-  completed.value = false; // Reset completion status after adding or updating
+  taskName.value = "";
+  selectedLevel.value = ""; 
+  completed.value = false; 
 }
 
-function updateTaskCompletion(task) {
-  // Update localStorage when the checkbox is toggled
+function updateTaskCompletion(task: Task): void {
   localStorage.setItem("todos", JSON.stringify(todos.value));
 }
 
-function removeTaskById(id) {
+function removeTaskById(id: string): void {
   todos.value = todos.value.filter((task) => task.id !== id);
   localStorage.setItem("todos", JSON.stringify(todos.value));
 }
 
-function editTaskById(id) {
+function editTaskById(id: string): void {
   const taskToEdit = todos.value.find((task) => task.id === id);
   if (taskToEdit) {
-    taskName.value = taskToEdit.name; // Load the task name
-    selectedLevel.value = taskToEdit.level; // Load the task level
-    completed.value = taskToEdit.completed; // Load the completion status
-    editingTaskId.value = id; // Set the ID of the task being edited
+    taskName.value = taskToEdit.name;
+    selectedLevel.value = taskToEdit.level;
+    completed.value = taskToEdit.completed;
+    editingTaskId.value = id;
   }
 }
 
@@ -103,18 +109,20 @@ onMounted(() => {
   todos.value = JSON.parse(localStorage.getItem("todos") || "[]");
 });
 
-// Group tasks by their levels
-const groupedTasks = ref({});
+const groupedTasks = ref<Record<string, Task[]>>({});
 watch(
   todos,
   (newTasks) => {
-    groupedTasks.value = newTasks.reduce((acc, task) => {
-      if (!acc[task.level]) {
-        acc[task.level] = [];
-      }
-      acc[task.level].push(task);
-      return acc;
-    }, {});
+    groupedTasks.value = newTasks.reduce(
+      (acc: Record<string, Task[]>, task: Task) => {
+        if (!acc[task.level]) {
+          acc[task.level] = [];
+        }
+        acc[task.level].push(task);
+        return acc;
+      },
+      {}
+    );
   },
   { deep: true }
 );
